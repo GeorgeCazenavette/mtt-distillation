@@ -57,8 +57,6 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         std = [0.2023, 0.1994, 0.2010]
         if args.zca:
             transform = transforms.Compose([transforms.ToTensor()])
-        elif args.kip_zca:
-            transform = None
         else:
             transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
         dst_train = datasets.CIFAR10(data_path, train=True, download=True, transform=transform) # no augmentation
@@ -313,12 +311,18 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
 
     for i_batch, datum in enumerate(dataloader):
         img = datum[0].float().to(args.device)
+        lab = datum[1].long().to(args.device)
+
+        if mode == "train" and args.texture:
+            img = torch.cat([torch.stack([torch.roll(im, (torch.randint(args.im_size[0]*args.canvas_size, (1,)), torch.randint(args.im_size[0]*args.canvas_size, (1,))), (1,2))[:,:args.im_size[0],:args.im_size[1]] for im in img]) for _ in range(args.canvas_samples)])
+            lab = torch.cat([lab for _ in range(args.canvas_samples)])
+
         if aug:
             if args.dsa:
                 img = DiffAugment(img, args.dsa_strategy, param=args.dsa_param)
             else:
                 img = augment(img, args.dc_aug_param, device=args.device)
-        lab = datum[1].long().to(args.device)
+
         if args.dataset == "ImageNet" and mode != "train":
             lab = torch.tensor([class_map[x.item()] for x in lab]).to(args.device)
 

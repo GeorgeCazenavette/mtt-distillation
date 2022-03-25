@@ -76,7 +76,7 @@ If you experience indefinite hanging during training, try running the process wi
 Before doing any distillation, you'll need to generate some expert trajectories using ```buffer.py```
 
 The following command will train 100 ConvNet models on CIFAR-100 with ZCA whitening for 50 epochs each:
-```
+```bash
 python buffer.py --dataset=CIFAR100 --model=ConvNet --train_epochs=50 --num_experts=100 --zca --buffer_path={path_to_buffer_storage} --data_path={path_to_dataset}
 ```
 We used 50 epochs with the default learning rate for all of our experts.
@@ -84,7 +84,7 @@ Worse (but still interesting) results can be obtained faster through training fe
 
 ### Distillation by Matching Training Trajectories
 The following command will then use the buffers we just generated to distill CIFAR-100 down to just 1 image per class:
-```
+```bash
 python distill.py --dataset=CIFAR100 --ipc=1 --syn_steps=20 --expert_epochs=3 --max_start_epoch=20 --zca --lr_img=1000 --lr_lr=1e-05 --lr_teacher=0.01 --buffer_path={path_to_buffer_storage} --data_path={path_to_dataset}
 ```
 
@@ -98,11 +98,11 @@ When generating expert trajectories with ```buffer.py``` or distilling the datas
 For example,
 
 ```bash
-python dsitill.py --dataset=ImageNet --subset=imagesquawk --model=ConvNetD5 --ipc=1 --res=128 --syn_steps=20 --expert_epochs=2 --max_start_epoch=10 --lr_img=1000 --lr_lr=1e-06 --lr_teacher=0.01 --buffer_path={path_to_buffer_storage} --data_path={path_to_dataset}
+python distill.py --dataset=ImageNet --subset=imagefruit --model=ConvNetD5 --ipc=1 --res=128 --syn_steps=20 --expert_epochs=2 --max_start_epoch=10 --lr_img=1000 --lr_lr=1e-06 --lr_teacher=0.01 --buffer_path={path_to_buffer_storage} --data_path={path_to_dataset}
 ```
-will distill the ```imagesquawk``` subset (at 128x128 resolution) into the following 10 images
+will distill the ```imagefruit``` subset (at 128x128 resolution) into the following 10 images
 
-<img src='docs/imagesquawk.png' width=600>
+<img src='docs/imagefruit.png' width=600>
 
 To register your own ImageNet subset, you can add it to the ```Config``` class at the top of ```utils.py```.
 
@@ -111,7 +111,17 @@ Simply create a list with the desired class ID's and add it to the dictionary.
 [This gist](https://gist.github.com/yrevar/942d3a0ac09ec9e5eb3a) contains a list of all 1k ImageNet classes and their corresponding numbers.
 
 
+### Texture Distillation
+You can also use the same set of expert trajectories (except those using ZCA) to distill classes into toroidal textures by simply adding the ```--texture``` flag.
 
+For example,
+
+```bash
+python distill.py --texture --dataset=ImageNet --subset=imagesquawk --model=ConvNetD5 --ipc=1 --res=256 --syn_steps=20 --expert_epochs=2 --max_start_epoch=10 --lr_img=1000 --lr_lr=1e-06 --lr_teacher=0.01 --buffer_path={path_to_buffer_storage} --data_path={path_to_dataset}
+```
+will distill the ```imagesquawk``` subset (at 256x256 resolution) into the following 10 textures
+
+<img src='docs/imagesquawk_tex.png' width=600>
 
 ## Acknowledgments
 We would like to thank Alexander Li, Assaf Shocher,  Gokul Swamy, Kangle Deng, Ruihan Gao, Nupur Kumari, Muyang Li, Gaurav Parmar, Chonghyuk Song, Sheng-Yu Wang, and Bingliang Zhang as well as Simon Lucey's Vision Group at the University of Adelaide for their valuable feedback. This work is supported, in part, by the NSF Graduate Research Fellowship under Grant No. DGE1745016 and grants from J.P. Morgan Chase, IBM, and SAP. Our code is adapted from https://github.com/VICO-UoE/DatasetCondensation

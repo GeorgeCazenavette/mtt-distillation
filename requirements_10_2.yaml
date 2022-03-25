@@ -1,4 +1,4 @@
-name: dd_old
+name: distillation
 channels:
   - pytorch
   - conda-forge

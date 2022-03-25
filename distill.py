@@ -17,6 +17,12 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def main(args):
 
+    if args.zca and args.texture:
+        raise AssertionError("Cannot use zca and texture together")
+
+    if args.texture and args.pix_init == "real":
+        print("WARNING: Using texture with real initialization will take a very long time to smooth out the boundaries between images.")
+
     if args.max_experts is not None and args.max_files is not None:
         args.total_experts = args.max_experts * args.max_files
 
@@ -30,6 +36,8 @@ def main(args):
     model_eval_pool = get_eval_pool(args.eval_mode, args.model, args.model)
 
     im_res = im_size[0]
+
+    args.im_size = im_size
 
     accs_all_exps = dict() # record performances of all experiments
     for key in model_eval_pool:
@@ -102,13 +110,22 @@ def main(args):
     ''' initialize the synthetic data '''
     label_syn = torch.tensor([np.ones(args.ipc)*i for i in range(num_classes)], dtype=torch.long, requires_grad=False, device=args.device).view(-1) # [0,0,0, 1,1,1, ..., 9,9,9]
 
-    image_syn = torch.randn(size=(num_classes * args.ipc, channel, im_size[0], im_size[1]),
-                                dtype=torch.float)
+    if args.texture:
+        image_syn = torch.randn(size=(num_classes * args.ipc, channel, im_size[0]*args.canvas_size, im_size[1]*args.canvas_size), dtype=torch.float)
+    else:
+        image_syn = torch.randn(size=(num_classes * args.ipc, channel, im_size[0], im_size[1]), dtype=torch.float)
 
     syn_lr = torch.tensor(args.lr_teacher).to(args.device)
 
     if args.pix_init == 'real':
         print('initialize synthetic data from random real images')
+        if args.texture:
+            for c in range(num_classes):
+                for i in range(args.canvas_size):
+                    for j in range(args.canvas_size):
+                        image_syn.data[c * args.ipc:(c + 1) * args.ipc, :, i * im_size[0]:(i + 1) * im_size[0],
+                        j * im_size[1]:(j + 1) * im_size[1]] = torch.cat(
+                            [get_images(c, 1).detach().data for s in range(args.ipc)])
         for c in range(num_classes):
             image_syn.data[c * args.ipc:(c + 1) * args.ipc] = get_images(c, args.ipc).detach().data
     else:
@@ -334,6 +351,10 @@ def main(args):
             x = syn_images[these_indices]
             this_y = y_hat[these_indices]
 
+            if args.texture:
+                x = torch.cat([torch.stack([torch.roll(im, (torch.randint(im_size[0]*args.canvas_size, (1,)), torch.randint(im_size[1]*args.canvas_size, (1,))), (1,2))[:,:im_size[0],:im_size[1]] for im in x]) for _ in range(args.canvas_samples)])
+                this_y = torch.cat([this_y for _ in range(args.canvas_samples)])
+
             if args.dsa and (not args.no_aug):
                 x = DiffAugment(x, args.dsa_strategy, param=args.dsa_param)
 
@@ -438,6 +459,10 @@ if __name__ == '__main__':
     parser.add_argument('--load_all', action='store_true', help="only use if you can fit all expert trajectories into RAM")
 
     parser.add_argument('--no_aug', type=bool, default=False, help='this turns off diff aug during distillation')
+
+    parser.add_argument('--texture', action='store_true', help="will distill textures instead")
+    parser.add_argument('--canvas_size', type=int, default=2, help='size of synthetic canvas')
+    parser.add_argument('--canvas_samples', type=int, default=1, help='number of canvas samples per iteration')
 
 
     parser.add_argument('--max_files', type=int, default=None, help='number of expert files to read (leave as None unless doing ablations)')
