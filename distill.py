@@ -438,7 +438,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_syn', type=int, default=None, help='should only use this if you run out of VRAM')
     parser.add_argument('--batch_train', type=int, default=256, help='batch size for training networks')
 
-    parser.add_argument('--pix_init', type=str, default='noise', choices=["noise", "real"],
+    parser.add_argument('--pix_init', type=str, default='real', choices=["noise", "real"],
                         help='noise/real: initialize synthetic images from random noise or randomly sampled real images.')
 
     parser.add_argument('--dsa', type=str, default='True', choices=['True', 'False'],
