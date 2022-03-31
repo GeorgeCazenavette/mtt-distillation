@@ -297,7 +297,7 @@ def get_time():
     return str(time.strftime("[%Y-%m-%d %H:%M:%S]", time.localtime()))
 
 
-def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
+def epoch(mode, dataloader, net, optimizer, criterion, args, aug, texture=False):
     loss_avg, acc_avg, num_exp = 0, 0, 0
     net = net.to(args.device)
 
@@ -313,7 +313,7 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
         img = datum[0].float().to(args.device)
         lab = datum[1].long().to(args.device)
 
-        if mode == "train" and args.texture:
+        if mode == "train" and texture:
             img = torch.cat([torch.stack([torch.roll(im, (torch.randint(args.im_size[0]*args.canvas_size, (1,)), torch.randint(args.im_size[0]*args.canvas_size, (1,))), (1,2))[:,:args.im_size[0],:args.im_size[1]] for im in img]) for _ in range(args.canvas_samples)])
             lab = torch.cat([lab for _ in range(args.canvas_samples)])
 
@@ -349,7 +349,7 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug):
 
 
 
-def evaluate_synset(it_eval, net, images_train, labels_train, testloader, args, decay="step", return_loss=False):
+def evaluate_synset(it_eval, net, images_train, labels_train, testloader, args, return_loss=False, texture=False):
     net = net.to(args.device)
     images_train = images_train.to(args.device)
     labels_train = labels_train.to(args.device)
@@ -368,7 +368,7 @@ def evaluate_synset(it_eval, net, images_train, labels_train, testloader, args, 
     loss_train_list = []
 
     for ep in tqdm.tqdm(range(Epoch+1)):
-        loss_train, acc_train = epoch('train', trainloader, net, optimizer, criterion, args, aug=True)
+        loss_train, acc_train = epoch('train', trainloader, net, optimizer, criterion, args, aug=True, texture=texture)
         acc_train_list.append(acc_train)
         loss_train_list.append(loss_train)
         if ep == Epoch:
