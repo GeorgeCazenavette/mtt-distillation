@@ -70,7 +70,7 @@ def main(args):
         teacher_net = get_network(args.model, channel, num_classes, im_size).to(args.device) # get a random model
         teacher_net.train()
         lr = args.lr_teacher
-        teacher_optim = torch.optim.SGD(teacher_net.parameters(), lr=lr, momentum=0, weight_decay=0)  # optimizer_img for synthetic data
+        teacher_optim = torch.optim.SGD(teacher_net.parameters(), lr=lr, momentum=args.mom, weight_decay=args.l2)  # optimizer_img for synthetic data
         teacher_optim.zero_grad()
 
         timestamps = []
@@ -125,6 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--train_epochs', type=int, default=50)
     parser.add_argument('--zca', action='store_true')
     parser.add_argument('--decay', action='store_true')
+    parser.add_argument('--mom', type=float, default=0, help='momentum')
+    parser.add_argument('--l2', type=float, default=0, help='l2 regularization')
     parser.add_argument('--save_interval', type=int, default=10)
 
     args = parser.parse_args()
