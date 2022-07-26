@@ -162,3 +162,13 @@ booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
 year={2022}
 }
 ```
+
+```
+@iniroceedings{
+cazenavette2022textures,
+title={Wearable ImageNet: Synthesizing Tileable Textures via Dataset Distillation},
+author= {George Cazenavette and Tongzhou Wang and Antonio Torralba and Alexei A. Efros and Jun-Yan Zhu},
+booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops},
+year={2022},
+}
+```
