@@ -90,6 +90,11 @@ python distill.py --dataset=CIFAR100 --ipc=1 --syn_steps=20 --expert_epochs=3 --
 
 <img src='docs/animation.gif' width=600>
 
+Please find a full list of hyper-parameters below:
+
+![image](https://user-images.githubusercontent.com/18726777/183353165-800cc033-e25f-4a33-aea9-4306c022ec53.png)
+
+
 ### ImageNet
 Our method can also distill subsets of ```ImageNet``` into low-support synthetic sets.
 
