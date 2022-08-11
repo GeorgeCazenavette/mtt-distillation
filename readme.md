@@ -92,7 +92,7 @@ python distill.py --dataset=CIFAR100 --ipc=1 --syn_steps=20 --expert_epochs=3 --
 
 Please find a full list of hyper-parameters below:
 
-![image](https://user-images.githubusercontent.com/18726777/183353165-800cc033-e25f-4a33-aea9-4306c022ec53.png)
+![image](https://user-images.githubusercontent.com/18726777/184226412-7bd0d577-225b-487c-8c9c-23f6462ca7d0.png)
 
 
 ### ImageNet
