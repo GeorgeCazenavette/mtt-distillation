@@ -22,49 +22,53 @@ def main(args):
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.dsa_param = ParamDiffAug()
 
-    # 数据集加载
-    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv = get_dataset(args.dataset, args.data_path, args.batch_real, args.subset, args=args)
-    
+    ## 数据集加载
+    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv = get_dataset(args.dataset, args.data_path, args.batch_real, args.subset, args=args) # dst_train: 一个用于训练的数据集对象/实例；class_map: 字典{原始标签x:新的整数标签i}
     # 打印超参数
     # print('\n================== Exp %d ==================\n '%exp)
     print('Hyper-parameters: \n', args.__dict__)
 
-    # 构建保存模型参数的路径
+    ## 构建保存模型参数的路径
     save_dir = os.path.join(args.buffer_path, args.dataset)
     if args.dataset == "ImageNet":
         save_dir = os.path.join(save_dir, args.subset, str(args.res))
-    if args.dataset in ["CIFAR10", "CIFAR100"] and not args.zca:
+    if args.dataset in ["CIFAR10", "CIFAR100"] and not args.zca:  # zca: store_true
         save_dir += "_NO_ZCA"
     save_dir = os.path.join(save_dir, args.model)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    # 数据预处理：将图像数据和对应的标签进行整理和存储
+    ## 数据预处理：将图像数据和对应的标签进行整理和存储
     ''' organize the real dataset '''
     images_all = []
     labels_all = []
-    indices_class = [[] for c in range(num_classes)]
+    indices_class = [[] for c in range(num_classes)]  # 存储每个类别的图像在 images_all 中的索引
     print("BUILDING DATASET")
+    # 遍历训练集实例中每个样本
     for i in tqdm(range(len(dst_train))):
-        sample = dst_train[i]
-        images_all.append(torch.unsqueeze(sample[0], dim=0))
-        labels_all.append(class_map[torch.tensor(sample[1]).item()])
+        sample = dst_train[i]  # 当前样本：sample[0]是数据，sample[1]是标签
+        images_all.append(torch.unsqueeze(sample[0], dim=0))  # 将数据增加一个维度（第一维），再append
+        labels_all.append(class_map[torch.tensor(sample[1]).item()])  # 通过class_map将原始标签映射为新的标签，再append
 
+    # 遍历整理后的新标签列表
     for i, lab in tqdm(enumerate(labels_all)):
-        indices_class[lab].append(i)
-    images_all = torch.cat(images_all, dim=0).to("cpu")
-    labels_all = torch.tensor(labels_all, dtype=torch.long, device="cpu")
+        indices_class[lab].append(i)  # 将当前索引i 添加到对应类别lab 的indices_class列表中
+    # 合并为张量
+    images_all = torch.cat(images_all, dim=0).to("cpu")  # 将所有图像数据堆叠起来，形成一个张量
+    labels_all = torch.tensor(labels_all, dtype=torch.long, device="cpu")  # 将标签列表转换为张量
 
+    # 打印每个类别的索引以及该类别中的真实图像数量
     for c in range(num_classes):
         print('class c = %d: %d real images'%(c, len(indices_class[c])))
         # class 0 = 1200 real images
         # ...
         # class 9 = 950 real images
 
+    # 计算并打印每个通道的图像均值和标准差
     for ch in range(channel):
         print('real images channel %d, mean = %.4f, std = %.4f'%(ch, torch.mean(images_all[:, ch]), torch.std(images_all[:, ch])))
 
-    #　创建损失函数
+    ##　创建损失函数
     criterion = nn.CrossEntropyLoss().to(args.device)
 
     trajectories = []
@@ -77,7 +81,7 @@ def main(args):
     args.dc_aug_param['strategy'] = 'crop_scale_rotate'  # for whole-dataset training
     print('DC augmentation parameters: \n', args.dc_aug_param)
 
-    # 模型训练循环
+    ## 模型训练循环
     for it in range(0, args.num_experts):
         # 训练合成数据
         ''' Train synthetic data '''
