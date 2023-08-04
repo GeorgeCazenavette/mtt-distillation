@@ -1,3 +1,8 @@
+'''
+在指定数据集上训练深度神经网络模型：
+数据集加载、数据增强、模型训练、参数保存
+'''
+
 import os
 import argparse
 import torch
@@ -11,16 +16,20 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def main(args):
-
+    # 参数解析
     args.dsa = True if args.dsa == 'True' else False
+    # 环境设置
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.dsa_param = ParamDiffAug()
 
+    # 数据集加载
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv = get_dataset(args.dataset, args.data_path, args.batch_real, args.subset, args=args)
-
+    
+    # 打印超参数
     # print('\n================== Exp %d ==================\n '%exp)
     print('Hyper-parameters: \n', args.__dict__)
 
+    # 构建保存模型参数的路径
     save_dir = os.path.join(args.buffer_path, args.dataset)
     if args.dataset == "ImageNet":
         save_dir = os.path.join(save_dir, args.subset, str(args.res))
@@ -30,7 +39,7 @@ def main(args):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-
+    # 数据预处理：将图像数据和对应的标签进行整理和存储
     ''' organize the real dataset '''
     images_all = []
     labels_all = []
@@ -48,10 +57,14 @@ def main(args):
 
     for c in range(num_classes):
         print('class c = %d: %d real images'%(c, len(indices_class[c])))
+        # class 0 = 1200 real images
+        # ...
+        # class 9 = 950 real images
 
     for ch in range(channel):
         print('real images channel %d, mean = %.4f, std = %.4f'%(ch, torch.mean(images_all[:, ch]), torch.std(images_all[:, ch])))
 
+    #　创建损失函数
     criterion = nn.CrossEntropyLoss().to(args.device)
 
     trajectories = []
@@ -64,17 +77,17 @@ def main(args):
     args.dc_aug_param['strategy'] = 'crop_scale_rotate'  # for whole-dataset training
     print('DC augmentation parameters: \n', args.dc_aug_param)
 
+    # 模型训练循环
     for it in range(0, args.num_experts):
-
+        # 训练合成数据
         ''' Train synthetic data '''
-        teacher_net = get_network(args.model, channel, num_classes, im_size).to(args.device) # get a random model
+        teacher_net = get_network(args.model, channel, num_classes, im_size).to(args.device)  # get a random model
         teacher_net.train()
         lr = args.lr_teacher
         teacher_optim = torch.optim.SGD(teacher_net.parameters(), lr=lr, momentum=args.mom, weight_decay=args.l2)  # optimizer_img for synthetic data
         teacher_optim.zero_grad()
 
-        timestamps = []
-
+        timestamps = []  # 记录训练过程中的参数变化（时间戳）
         timestamps.append([p.detach().cpu() for p in teacher_net.parameters()])
 
         lr_schedule = [args.train_epochs // 2 + 1]
@@ -98,6 +111,7 @@ def main(args):
 
         trajectories.append(timestamps)
 
+        # 参数保存
         if len(trajectories) == args.save_interval:
             n = 0
             while os.path.exists(os.path.join(save_dir, "replay_buffer_{}.pt".format(n))):
