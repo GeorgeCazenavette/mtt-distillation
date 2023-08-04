@@ -62,7 +62,7 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         dst_train = datasets.CIFAR10(data_path, train=True, download=True, transform=transform) # no augmentation
         dst_test = datasets.CIFAR10(data_path, train=False, download=True, transform=transform)
         class_names = dst_train.classes
-        class_map = {x:x for x in range(num_classes)}
+        class_map = {x:x for x in range(num_classes)}  # 一个字典，用于将原始类别标签x 映射 为新的类别标签x
 
 
     elif dataset == 'Tiny':
@@ -86,7 +86,7 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         im_size = (128, 128)
         num_classes = 10
 
-        config.img_net_classes = config.dict[subset]
+        config.img_net_classes = config.dict[subset]  # config.dict[subset] = imagenette = [0, 217, 482, 491, 497, 566, 569, 571, 574, 701]，因此config.img_net_classes是一个类别标签列表
 
         mean = [0.485, 0.456, 0.406]
         std = [0.229, 0.224, 0.225]
@@ -302,7 +302,7 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug, texture=False)
     net = net.to(args.device)
 
     if args.dataset == "ImageNet":
-        class_map = {x: i for i, x in enumerate(config.img_net_classes)}
+        class_map = {x: i for i, x in enumerate(config.img_net_classes)}  # enumerate遍历标签列表，i标签索引，x标签。将原始类别标签x映射为新的整数标签i
 
     if mode == 'train':
         net.train()
