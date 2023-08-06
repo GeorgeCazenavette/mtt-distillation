@@ -296,14 +296,15 @@ def get_network(model, channel, num_classes, im_size=(32, 32), dist=True):
 def get_time():
     return str(time.strftime("[%Y-%m-%d %H:%M:%S]", time.localtime()))
 
-
+# 训练/测试模型的一次迭代
 def epoch(mode, dataloader, net, optimizer, criterion, args, aug, texture=False):
-    loss_avg, acc_avg, num_exp = 0, 0, 0
+    loss_avg, acc_avg, num_exp = 0, 0, 0  # num_exp 样本数量
     net = net.to(args.device)
 
     if args.dataset == "ImageNet":
         class_map = {x: i for i, x in enumerate(config.img_net_classes)}  # enumerate遍历标签列表，i标签索引，x标签。将原始类别标签x映射为新的整数标签i
 
+    # 训练/评估模式
     if mode == 'train':
         net.train()
     else:
@@ -313,30 +314,33 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug, texture=False)
         img = datum[0].float().to(args.device)
         lab = datum[1].long().to(args.device)
 
+        # texture 纹理增强操作
         if mode == "train" and texture:
             img = torch.cat([torch.stack([torch.roll(im, (torch.randint(args.im_size[0]*args.canvas_size, (1,)), torch.randint(args.im_size[0]*args.canvas_size, (1,))), (1,2))[:,:args.im_size[0],:args.im_size[1]] for im in img]) for _ in range(args.canvas_samples)])
             lab = torch.cat([lab for _ in range(args.canvas_samples)])
-
+        
+        # 数据增强操作
         if aug:
             if args.dsa:
                 img = DiffAugment(img, args.dsa_strategy, param=args.dsa_param)
             else:
                 img = augment(img, args.dc_aug_param, device=args.device)
-
-        if args.dataset == "ImageNet" and mode != "train":
+        
+        # eval模式，将标签进行映射
+        if args.dataset == "ImageNet" and mode != "train": 
             lab = torch.tensor([class_map[x.item()] for x in lab]).to(args.device)
 
-        n_b = lab.shape[0]
+        n_b = lab.shape[0]  # 批次中样本的数量
 
-        output = net(img)
+        output = net(img)  # 使用神经网络模型进行前向传播
         loss = criterion(output, lab)
-
         acc = np.sum(np.equal(np.argmax(output.cpu().data.numpy(), axis=-1), lab.cpu().data.numpy()))
 
         loss_avg += loss.item()*n_b
         acc_avg += acc
         num_exp += n_b
 
+        # train模式，反向传播和参数更新
         if mode == 'train':
             optimizer.zero_grad()
             loss.backward()
