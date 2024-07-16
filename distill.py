@@ -416,6 +416,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--model', type=str, default='ConvNet', help='model')
 
+    parser.add_argument('--res', type=int, default=128, help='resolution for imagenet')
+
     parser.add_argument('--ipc', type=int, default=1, help='image(s) per class')
 
     parser.add_argument('--eval_mode', type=str, default='S',
