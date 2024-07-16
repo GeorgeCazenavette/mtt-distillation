@@ -112,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='CIFAR10', help='dataset')
     parser.add_argument('--subset', type=str, default='imagenette', help='subset')
     parser.add_argument('--model', type=str, default='ConvNet', help='model')
+    parser.add_argument('--res', type=int, default=128, help='resolution for imagenet')
     parser.add_argument('--num_experts', type=int, default=100, help='training iterations')
     parser.add_argument('--lr_teacher', type=float, default=0.01, help='learning rate for updating network parameters')
     parser.add_argument('--batch_train', type=int, default=256, help='batch size for training networks')
